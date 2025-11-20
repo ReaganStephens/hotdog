@@ -1,10 +1,73 @@
+import customtkinter as ctk
+from tkinter import Canvas
+
 from model_functions import *
 from keras.optimizers import RMSprop
 from mode_functions import image_mode, video_mode, webcam_mode
 
+def upload_image():
+    print ("Hello World")
+
 def main():
+    global app, content_frame, main_frame
 
     #TEMP UNTIL OZ MAKES UI
+    app = ctk.CTk()
+    app.title("Hotdog Detector")
+    app.geometry("500x400")
+
+    background_card = ctk.CTkFrame(
+        app,
+        width=600,
+        height=500,
+        corner_radius=40,
+        fg_color="#2e2e2e"
+    )
+    background_card.place(relx=0.5, rely=0.5, anchor="center")
+
+    title = ctk.CTkLabel(
+        app,
+        text = "Is it a Hot Dog?",
+        font = ctk.CTkFont(size = 28, weight = "bold")
+    )
+    title.pack(padx = 50, pady = 10)
+
+    subtitle = ctk.CTkLabel(
+        app,
+        text = "Choose a mode:"
+    )
+    subtitle.pack(padx = 10, pady = 10)
+
+    image = ctk.CTkButton(
+        app, 
+        text = "Upload Image",
+        width = 100,      # wider
+        height = 50,      # taller
+        command = upload_image, 
+        fg_color = "green")
+    image.pack(padx =  10, pady = 10)
+
+    video = ctk.CTkButton (
+        app,
+        text = "Upload Video",
+        width = 100,
+        height = 50,
+        command = upload_image,
+        fg_color = "green"
+    )
+    video.pack(padx = 10, pady = 10)
+
+    webcam = ctk.CTkButton (
+        app,
+        text = "Use Webcam",
+        width = 100,
+        height = 50,
+        command = upload_image,
+        fg_color = "green"
+    )
+    webcam.pack(padx = 10, pady = 10)
+
+    app.mainloop()
 
     print("===== Hotdog Detector Menu =====")
     print("1. Image Mode")
