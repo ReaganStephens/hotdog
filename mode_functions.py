@@ -196,18 +196,10 @@ def upload_image_mode(parent):
     else:
         prediction = 'not hotdog'
 
-    print(f'Raw prediction: {result}')
-    print(
-        f'The image {images[index][0]} is a {prediction} with {result[0][0]} confidence')
-
-    #Check if the prediction is correct
-    correct_prediction = (
-        (prediction == 'hotdog' and images[index][1] == 1) or
-        (prediction == 'not hotdog' and images[index][1] == 0)
-    )
+    correct_prediction = True
 
     #Show the image with the prediction label
-    showImagePrediction(parent_frame, images[index][0], prediction,
+    showImagePrediction(parent_frame, image_path, prediction,
                         result[0][0], correct_prediction)
 
 

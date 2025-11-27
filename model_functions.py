@@ -6,7 +6,7 @@ import tensorflow as tf
 from keras.src.legacy.preprocessing.image import ImageDataGenerator
 from keras.layers import BatchNormalization, Dense, Dropout, GlobalAveragePooling2D
 from keras.regularizers import l2
-from keras.models import load_model as Model
+from keras.models import load_model as LoadModel, Model
 from keras.applications.inception_v3 import InceptionV3
 from keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
 from keras.utils import plot_model

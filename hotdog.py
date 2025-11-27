@@ -1,6 +1,7 @@
 #Imports
 import customtkinter as ctk
 from model_functions import *
+from keras.optimizers import RMSprop
 from mode_functions import image_mode, upload_image_mode, video_mode, webcam_mode, previous_image, next_image
 
 #Global mode
