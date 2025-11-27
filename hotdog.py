@@ -1,80 +1,132 @@
+#Imports
 import customtkinter as ctk
-from tkinter import Canvas
-
 from model_functions import *
-from keras.optimizers import RMSprop
-from mode_functions import image_mode, video_mode, webcam_mode
+from mode_functions import image_mode, upload_image_mode, video_mode, webcam_mode, previous_image, next_image
 
-def upload_image():
-    print ("Hello World")
+#Global mode
+mode = None
 
-def main():
-    global app, content_frame, main_frame
+#Clears the app between selections
+def clear_content():
+    for widget in content_frame.winfo_children():
+        widget.destroy()
 
-    #TEMP UNTIL OZ MAKES UI
-    app = ctk.CTk()
-    app.title("Hotdog Detector")
-    app.geometry("500x400")
-
-    background_card = ctk.CTkFrame(
-        app,
-        width=600,
-        height=500,
-        corner_radius=40,
-        fg_color="#2e2e2e"
-    )
-    background_card.place(relx=0.5, rely=0.5, anchor="center")
-
+#Home screen of the app
+def home():
+    #Title
     title = ctk.CTkLabel(
-        app,
+        content_frame,
         text = "Is it a Hot Dog?",
         font = ctk.CTkFont(size = 28, weight = "bold")
     )
     title.pack(padx = 50, pady = 10)
-
+    #Subtitle
     subtitle = ctk.CTkLabel(
-        app,
-        text = "Choose a mode:"
+        content_frame,
+        text = "Try out the model!",
+        font = ctk.CTkFont(size = 25),
     )
     subtitle.pack(padx = 10, pady = 10)
-
-    image = ctk.CTkButton(
-        app, 
+    #Test Button
+    test = ctk.CTkButton(
+        content_frame, 
+        text = "Test Images",
+        width = 160,      # wider
+        height = 80,      # taller
+        command = test_model, 
+        font=ctk.CTkFont(size=20),
+        hover_color="#ffdb58",
+        fg_color = "#931009")
+    test.pack(padx =  10, pady = 10)
+    #Subtitle
+    subtitle2 = ctk.CTkLabel(
+        content_frame,
+        text = "Choose a mode:",
+        font = ctk.CTkFont(size = 25)
+    )
+    subtitle2.pack(padx = 10, pady = 10)
+    #Upload Image Button
+    image = ctk.CTkButton (
+        content_frame,
         text = "Upload Image",
-        width = 100,      # wider
-        height = 50,      # taller
-        command = upload_image, 
-        fg_color = "green")
-    image.pack(padx =  10, pady = 10)
-
-    video = ctk.CTkButton (
-        app,
-        text = "Upload Video",
-        width = 100,
-        height = 50,
+        width = 160,
+        height = 80,
         command = upload_image,
-        fg_color = "green"
+        font=ctk.CTkFont(size=20),
+        hover_color = "#ffdb58",
+        fg_color = "#931009"
+    )
+    image.pack(padx = 10, pady = 10)
+    #Upload Video Button
+    video = ctk.CTkButton (
+        content_frame,
+        text = "Upload Video",
+        width = 160,
+        height = 80,
+        command = upload_video,
+        font=ctk.CTkFont(size=20),
+        hover_color = "#ffdb58",
+        fg_color = "#931009"
     )
     video.pack(padx = 10, pady = 10)
-
+    #Webcam Button
     webcam = ctk.CTkButton (
-        app,
+        content_frame,
         text = "Use Webcam",
-        width = 100,
-        height = 50,
-        command = upload_image,
-        fg_color = "green"
+        width = 160,
+        height = 80,
+        command = camera,
+        font=ctk.CTkFont(size=20),
+        hover_color = "#ffdb58",
+        fg_color = "#931009"
     )
     webcam.pack(padx = 10, pady = 10)
 
-    app.mainloop()
-
-    print("===== Hotdog Detector Menu =====")
-    print("1. Image Mode")
-    print("2. Video Mode")
-    print("3. Webcam Mode")
-    choice = input("Select mode (1 or 2 or 3): ").strip()
-
+#Test Model function
+def test_model():
+    global mode
+    clear_content()
+    mode = "test"
+    image_mode(content_frame)
+#Upload Image function
+def upload_image():
+    global mode
+    clear_content()
+    mode = "image"
+    upload_image_mode(content_frame)
+#Camera function
+def camera():
+    global mode
+    clear_content()
+    mode = "webcam"
+    webcam_mode(content_frame)
+#Upload Video function
+def upload_video():
+    global mode
+    clear_content()
+    mode = "video"
+    video_mode(content_frame)
+#Function to listen to keys
+def on_key(event):
+    global mode
+    print("KEY EVENT:", repr(event.char), event.keysym, "mode:", mode)  # DEBUG
+    ch = event.char.lower()
+    #If q is pressed clears widgets
+    if ch == 'q':
+        mode = None
+        clear_content()
+        home()
+        return
+    #If a and d is pressed, cycles images
+    if mode == "test":
+        if ch == 'a':
+            previous_image()
+        elif ch == 'd':
+            next_image()
+#Main function
+def main():
+    #Global variables
+    global app, content_frame
 
     # Load existing model or train if not found
     if os.path.exists("hotdog.h5"):
@@ -86,17 +138,21 @@ def main():
         model.save("hotdog.h5")
         print("Model trained and saved as hotdog.h5")
 
+    #Define app
+    app = ctk.CTk()
+    app.bind_all("<Key>", on_key)
+    app.title("Hotdog Detector")
+    app.geometry("800x650")
 
-    if choice == "1":
-        image_mode()
-    elif choice == "2":
-        video_mode()
-    elif choice =="3":
-        webcam_mode()
-    else:
-        print("Invalid choice. Exiting.")
-        sys.exit(0)
+    #Define content frame
+    content_frame = ctk.CTkFrame(app, fg_color="#C48D54")
+    content_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
+    #Call home function
+    home()
+
+    #Opens app
+    app.mainloop()
 
     '''
     Main function for Hotdog or Not Hotdog
@@ -105,6 +161,6 @@ def main():
     It will then load a random image from the test directory and predict if it is a hotdog or not hotdog
     displaying the image and prediction label
     '''
-
+#Calls main
 if __name__ == "__main__":
     main()

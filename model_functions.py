@@ -1,38 +1,28 @@
-
-from keras.src.legacy.preprocessing.image import ImageDataGenerator
-from keras.utils import plot_model, load_img, img_to_array
-from keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
-from keras.applications.inception_v3 import InceptionV3
-from keras.layers import BatchNormalization, Dense, Dropout, GlobalAveragePooling2D
-from keras.models import load_model as LoadModel, Model
-import platform
-import cv2
-import numpy as np
-import tensorflow as tf
-
+#Imports
 import os
-import sys
-import random
 import cv2
 import numpy as np
 import tensorflow as tf
 from keras.src.legacy.preprocessing.image import ImageDataGenerator
-from keras.utils import load_img, img_to_array
 from keras.layers import BatchNormalization, Dense, Dropout, GlobalAveragePooling2D
 from keras.regularizers import l2
-from keras.models import load_model as LoadModel, Model
+from keras.models import load_model as Model
 from keras.applications.inception_v3 import InceptionV3
 from keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
-from keras.utils import plot_model, load_img, img_to_array
+from keras.utils import plot_model
 import platform
+import customtkinter as ctk
+from PIL import Image, ImageTk
 
 
-
-# Global Variables
+#Global Variables
 image_width = 299
 image_height = 299
 batch_size = 16
 num_epochs = 20
+
+DISPLAY_WIDTH = 400
+DISPLAY_HEIGHT = 400
 
 def train_model():
     # Data generators
@@ -159,62 +149,86 @@ def lr_schedule(epoch, initial_lr=0.001, min_lr=1e-6, max_lr=1e-3):
     return lr
 
 
-def showImagePrediction(image_path, prediction, confidence, correct=True):
-    '''
-    Displays the image with the prediction label
-    takes the image path, prediction label, confidence, and whether the prediction is correct as arguments
-    '''
-    # Load the image
+def showImagePrediction(parent, image_path, prediction, confidence, correct_prediction):
+    """
+    Displays the image with prediction label inside a CustomTkinter widget.
+    'parent' should be a CTkFrame or CTk window where the image will appear.
+    """
+    #Clear Widgets
+    for widget in parent.winfo_children():
+        widget.destroy()
+
+    #Load original image
     img = cv2.imread(image_path)
 
-    # Add the prediction label to the image
+    #Resize image 
+    img = cv2.resize(img, (DISPLAY_WIDTH, DISPLAY_HEIGHT))
+
+    #Label and background color
     if prediction == 'hotdog':
         label = f"{prediction} ({confidence:.2f})"
-        bg_color = (0, 255, 0)  # green background for hotdog prediction
+        bg_color = (0, 255, 0)  # green
     else:
-        label = f"{prediction} ({1 - confidence:.2f})"
-        bg_color = (0, 0, 255)  # red background for not hotdog prediction
+        label = f"{"not hotdog"} ({1 - confidence:.2f})"
+        bg_color = (0, 0, 255)  # red
 
-    # Set the font color to white
     font_color = (255, 255, 255)
 
-    # Get the size of the image and the prediction label
-    img_height, img_width, _ = img.shape
-    label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+    #Label height
+    label_bar_height = 60
 
-    # Calculate the position of the label
-    label_x = (img_width - label_size[0]) // 2
-    label_y = img_height + label_size[1] + 20
+    # Create final canvas with room below the image
+    total_height = DISPLAY_HEIGHT + label_bar_height
+    canvas = np.zeros((total_height, DISPLAY_WIDTH, 3), dtype=np.uint8)
 
-    # Create a new image with the same width and a taller height to accommodate the label
-    new_img = np.zeros((label_y, img_width, 3), np.uint8)
-    new_img[:img_height, :] = img
+    # Put image on top
+    canvas[0:DISPLAY_HEIGHT, :] = img
 
-    # Draw the background rectangle for the label
-    cv2.rectangle(new_img, (0, img_height),
-                  (img_width, label_y), bg_color, -1)
-    
-    # Draw the background rectangle for the checkmark or X
-    cv2.circle(new_img, (img_width // 2, img_height), 30, bg_color, -1)
+    #Draw background bar
+    cv2.rectangle(canvas,
+                  (0, DISPLAY_HEIGHT),
+                  (DISPLAY_WIDTH, total_height),
+                  bg_color, -1)
 
-    # Draw the prediction label
-    cv2.putText(new_img, label, (label_x, img_height + label_size[1] + 10),
+    #Draw label centered
+    text_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+    text_x = (DISPLAY_WIDTH - text_size[0]) // 2
+    text_y = DISPLAY_HEIGHT + (label_bar_height + text_size[1]) // 2
+
+    cv2.putText(canvas, label, (text_x, text_y),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, font_color, 2)
 
-    # Calculate the position of the checkmark or X
-    symbol_x = img_width // 2 - 15
-    symbol_y = img_height - 15
-    
-    # Draw the checkmark or X
-    if correct:
-        # Draw a checkmark using lines
-        cv2.line(new_img, (symbol_x, symbol_y + 10), (symbol_x + 10, symbol_y + 20), font_color, 3)
-        cv2.line(new_img, (symbol_x + 10, symbol_y + 20), (symbol_x + 25, symbol_y - 5), font_color, 3)
+    #Draw checkmark or X over a circle
+    center_x = DISPLAY_WIDTH // 2
+    center_y = DISPLAY_HEIGHT
+
+    cv2.circle(canvas, (center_x, center_y), 25, bg_color, -1)
+
+    if correct_prediction:
+        cv2.line(canvas, (center_x - 10, center_y),
+                 (center_x - 2, center_y + 12), font_color, 3)
+        cv2.line(canvas, (center_x - 2, center_y + 12),
+                 (center_x + 12, center_y - 12), font_color, 3)
     else:
-        # Draw an "X" using lines
-        cv2.line(new_img, (symbol_x + 5, symbol_y), (symbol_x + 25, symbol_y + 20), font_color, 3)
-        cv2.line(new_img, (symbol_x + 5, symbol_y + 20), (symbol_x + 25, symbol_y), font_color, 3)
+        cv2.line(canvas, (center_x - 10, center_y - 10),
+                 (center_x + 10, center_y + 10), font_color, 3)
+        cv2.line(canvas, (center_x - 10, center_y + 10),
+                 (center_x + 10, center_y - 10), font_color, 3)
 
+    #Convert image
+    canvas = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
+    pil_img = Image.fromarray(canvas)
+    tk_img = ImageTk.PhotoImage(pil_img)
 
-    # Show the image
-    cv2.imshow("Hotdog or Not Hotdog", new_img)
+    #Display image label
+    img_label = ctk.CTkLabel(parent, image=tk_img, text="")
+    img_label.image = tk_img  # keep reference
+    img_label.pack(pady=10)
+
+    #Display instructions
+    instructions = ctk.CTkLabel(
+        parent,
+        text="Press A for Previous Image  |   Press D for Next\nPress Q to Quit to Home Screen",
+        font=ctk.CTkFont(size=14)
+    )
+    instructions.pack(pady=(0, 10))
